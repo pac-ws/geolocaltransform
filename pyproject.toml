@@ -1,0 +1,25 @@
+[build-system]
+requires = [ "scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "geolocaltransform"
+authors = [
+  { name = "Saurav Agarwal", email = "agr.saurav1@gmail.com" },
+]
+description = "Library for large-scale coverage control using robot swarms"
+requires-python = ">=3.10"
+version = "0.0.1"
+dependencies = ["numpy", "pyyaml",
+  'toml; python_version < "3.11"',
+]
+
+[tool.scikit-build]
+# minimum-version = "0.8"
+# cmake.version = ">=3.28"
+sdist.cmake = true
+sdist.include = [
+  "pybind11/third_party/tools",
+  "pybind11/third_party/include",
+  "pybind11/third_party/CMakeLists.txt",
+]
