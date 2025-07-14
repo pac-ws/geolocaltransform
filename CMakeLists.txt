@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
+if(POLICY CMP0175)
+  cmake_policy(SET CMP0175 NEW)
+endif()
 if(NOT DEFINED SKBUILD_PROJECT_NAME)
 	set(PROJECT_NAME "geolocaltransform")
 else()
@@ -53,10 +56,26 @@ if(NOT Eigen3_FOUND OR Eigen3_VERSION VERSION_LESS 3.4)
   add_subdirectory(${FETCHCONTENT_BASE_DIR}/eigen3-src ${CMAKE_CURRENT_BINARY_DIR}/eigen3)
 endif()
 
-find_package(GeographicLib REQUIRED)
+# Always build GeographicLib from source to ensure self-contained build
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static libraries")
+set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Enable PIC for static libraries")
+FetchContent_Declare(
+    GeographicLib
+    GIT_REPOSITORY https://github.com/GeographicLib/GeographicLib.git
+    GIT_TAG v2.5
+)
+FetchContent_GetProperties(GeographicLib)
+if(NOT geographiclib_POPULATED)
+    FetchContent_Populate(GeographicLib)
+    add_subdirectory(${geographiclib_SOURCE_DIR} ${geographiclib_BINARY_DIR})
+endif()
 
 pybind11_add_module(${PROJECT_NAME} MODULE transform_pybinds.cpp)
-set(dependencies_list Eigen3::Eigen ${GeographicLib_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${dependencies_list})
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${geographiclib_SOURCE_DIR}/include
+    ${geographiclib_BINARY_DIR}/include)
+target_link_libraries(${PROJECT_NAME} PRIVATE Eigen3::Eigen GeographicLib)
 
+# Install the main module and __init__.py
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${PROJECT_NAME})
+install(FILES __init__.py DESTINATION ${PROJECT_NAME})
